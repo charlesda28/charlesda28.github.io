@@ -14,6 +14,9 @@
       img {
         border: 2px solid #000; /* Set border thickness and color */
         margin: 5px; /* Add some space between images */
+        object-fit: cover; /* Preserve aspect ratio without stretching */
+        max-width: 100%; /* Ensure the image doesn't exceed its container's width */
+        height: auto; /* Allow the image's height to adjust proportionally */
       }
     </style>
   </head>
@@ -24,10 +27,10 @@
     </div>
 
     <p>I love you baby</p>
-    <img src="images/me_melanie_first_waterfall.jpeg" alt="me and melanies first waterfall together" width="300" height='auto'>
+    <img src="images/me_melanie_first_waterfall.jpeg" alt="me and melanies first waterfall together">
     <div class="image-container">
-      <img src="images/me_melanie_first_waterfall.jpeg" alt="Image 1" width="300" height='auto'>
-      <img src="images/IMG_3192.jpeg" alt="Image 2" width="300" height='auto'>
+      <img src="images/me_melanie_first_waterfall.jpeg" alt="Image 1">
+      <img src="images/IMG_3192.jpeg" alt="Image 2">
     </div>
   </body>
 </html>
