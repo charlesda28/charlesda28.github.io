@@ -49,11 +49,15 @@ function normalize(s) {
   if (!(raw && 'setup' in raw)) s.setup = !!(raw && (raw.purchases?.length || raw.bills?.length));
   return s;
 }
-function save(quiet) {
-  state.updatedAt = new Date().toISOString();
+function saveLocal() {
   const json = JSON.stringify(state);
   try { localStorage.setItem(KEY, json); } catch (e) { toast('Could not save on this device'); }
   idb.set(KEY, json);
+}
+function save(quiet) {
+  state.updatedAt = new Date().toISOString();
+  saveLocal();
+  if (window.Sync && window.Sync.ready) window.Sync.push(state);   // shared mode: send the change to everyone
   if (!quiet) render();
 }
 async function load() {
@@ -107,7 +111,13 @@ window.__calc = () => calc();
 // ---------- UI helpers ----------
 const ic = c => `<span class="ic" style="background:${META[c].tint}">${META[c].ic}</span>`;
 const bar = (num, den, color) => { const p = den > 0 ? Math.max(0, Math.min(1, num / den)) : 0; return `<div class="bar"><i style="width:${(p * 100).toFixed(1)}%;background:${color}"></i></div>`; };
-const savedBadge = () => `<span class="saved" title="Saved on this device"><i></i><span class="lg">Saved on this device</span><span class="sm">Saved</span></span>`;
+// Sync status pill. Local mode: "Saved on this device". Shared mode: Synced / Syncing / Offline.
+let status = { tone: 'good', long: 'Saved on this device', short: 'Saved' };
+const savedBadge = () => `<span class="saved ${status.tone}" title="${esc(status.long)}"><i></i><span class="lg">${esc(status.long)}</span><span class="sm">${esc(status.short)}</span></span>`;
+function setStatus(st) {
+  status = Object.assign({}, status, st);
+  document.querySelectorAll('.saved').forEach(el => { el.outerHTML = savedBadge(); });
+}
 let toastT;
 function toast(msg, action, fn) {
   const t = $('#toast');
@@ -137,7 +147,9 @@ function go(t) {
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => go(b.dataset.tab));
 window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (t && t !== tab && document.getElementById('page-' + t)) go(t); });
 
+let renderPending = false;
 function render() {
+  renderPending = false;
   const c = calc();
   ({ today: rToday, add: rAdd, purchases: rPurchases, bills: rBills, daily: rDaily })[tab](c);
 }
@@ -392,12 +404,15 @@ function rDaily(c) {
           `<div class="field"><label><span class="dot" style="background:${META[k].color}"></span>${l}</label><input data-limit="${k}" inputmode="decimal" value="${state.limits[k]}"><span class="u">${u}</span></div>`).join('')}
       </div>
 
-      <div class="sec">Backup &amp; sync</div>
+      ${window.Sync && window.Sync.ready ? window.Sync.settingsHTML() : ''}
+      <div class="sec">Backup${window.Sync && window.Sync.ready ? '' : ' &amp; sync'}</div>
       <div class="card">
-        <div style="font-size:15px;line-height:1.45">Your data saves on this device automatically. To move it to your Mac or iPhone, export a backup here and import it on the other device.</div>
+        <div style="font-size:15px;line-height:1.45">${window.Sync && window.Sync.ready
+          ? 'Everything syncs to everyone on the shared tracker. You can still export a backup file to keep a copy.'
+          : 'Your data saves on this device automatically. To move it to your Mac or iPhone, export a backup here and import it on the other device.'}</div>
         <div class="btnrow" style="margin-top:14px"><button class="btn ghost" id="exp">Export backup</button><button class="btn ghost" id="imp">Import backup</button></div>
         <div class="hint">Last saved ${state.updatedAt ? new Date(state.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'}</div>
-        <button class="btn danger" id="reset" style="margin-top:14px;height:46px;font-size:15px">Erase data on this device</button>
+        ${window.Sync && window.Sync.ready ? '' : '<button class="btn danger" id="reset" style="margin-top:14px;height:46px;font-size:15px">Erase data on this device</button>'}
       </div>
     </div>
     <div class="db">
@@ -429,7 +444,8 @@ function rDaily(c) {
     const v = r2(i.value.replace(/[^0-9.]/g, '')); state.limits[i.dataset.limit] = v; save(); toast(`${i.dataset.limit} limit set to ${money(v, { cents: v % 1 !== 0 })}`);
   });
   $('#exp').onclick = exportData; $('#imp').onclick = () => $('#importFile').click();
-  $('#reset').onclick = () => { if (confirm('Erase everything on this device? Export a backup first if you want to keep it.')) { state = normalize(clone(window.SEED)); state.setup = false; save(true); go('today'); toast('Erased. Import a backup to start again.'); } };
+  if (window.Sync && window.Sync.ready) window.Sync.bindSettings($('#page-daily'));
+  if ($('#reset')) $('#reset').onclick = () => { if (confirm('Erase everything on this device? Export a backup first if you want to keep it.')) { state = normalize(clone(window.SEED)); state.setup = false; save(true); go('today'); toast('Erased. Import a backup to start again.'); } };
 }
 
 // ---------- backup ----------
@@ -452,7 +468,10 @@ $('#importFile').onchange = async e => {
     const j = JSON.parse(await f.text()); const d = j.data || j;
     if (!d.period || !Array.isArray(d.purchases)) throw new Error('bad');
     const when = d.updatedAt ? new Date(d.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'unknown time';
-    if (state.setup && !confirm(`Replace the data on this device with the backup from ${when}? (${d.purchases.length} purchases)`)) return;
+    const shared = window.Sync && window.Sync.ready;
+    if ((state.setup || shared) && !confirm(shared
+      ? `Replace the SHARED tracker for everyone with the backup from ${when}? (${d.purchases.length} purchases)`
+      : `Replace the data on this device with the backup from ${when}? (${d.purchases.length} purchases)`)) return;
     state = normalize(d); state.setup = true; save(true); go('today'); toast(`Backup imported · ${state.purchases.length} purchases, ${state.bills.length} bills`);
   } catch { toast("That file isn't a Spending backup"); }
 };
@@ -472,10 +491,30 @@ document.addEventListener('click', e => {
   else if (d.delmove) { const i = state.moves.findIndex(m => m.id === d.delmove); const m = state.moves.splice(i, 1)[0]; save(); toast('Move deleted', 'Undo', () => { state.moves.splice(i, 0, m); save(); }); }
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+// A shared change arrived while typing: refresh once the field is done (late enough not to eat a tap).
+document.addEventListener('focusout', () => setTimeout(() => {
+  const a = document.activeElement;
+  if (renderPending && tab !== 'add' && !(a && /INPUT|SELECT|TEXTAREA/.test(a.tagName))) render();
+}, 700));
 // Keep "today" fresh if the app stays open past midnight or comes back from the background.
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 window.addEventListener('storage', e => { if (e.key === KEY) { load().then(render); } });
 
-load().then(() => { go(tab); window.__ready = true; });
+// Hooks for sync.js (shared mode). Remote changes replace the local copy without echoing back.
+window.App = {
+  get state() { return state; },
+  normalize: d => normalize(d),
+  applyRemote(data) {
+    state = normalize(data); state.setup = true; saveLocal();
+    const a = document.activeElement;
+    const typing = a && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && !$('#sheet').contains(a);
+    if (typing || tab === 'add') { renderPending = true; }   // don't yank the form while someone is typing
+    else render();
+  },
+  render: () => render(), toast, setStatus, go: t => go(t), esc, money,
+  clearLocal() { state = normalize(clone(window.SEED)); state.setup = false; saveLocal(); render(); },
+  replaceAndPush(data) { state = normalize(data); state.setup = true; save(); }
+};
+load().then(() => { go(tab); window.__ready = true; document.dispatchEvent(new Event('app-ready')); });
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

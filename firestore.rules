@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// Spending tracker: only signed-in, email-verified people on the allowlist
+// can read or write. The owner (Charles) manages the allowlist.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function owner() { return 'charlesda28@gmail.com'; }   // <- change if you sign in with another email
+
+    function signedIn() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true;
+    }
+    function me() { return request.auth.token.email.lower(); }
+    function isOwner() { return signedIn() && me() == owner(); }
+    function allowed() {
+      return isOwner()
+        || (signedIn() && exists(/databases/$(database)/documents/allowlist/$(me())));
+    }
+
+    // allowlist/{email}: one document per person, id = their email in lowercase.
+    match /allowlist/{email} {
+      allow read: if allowed();
+      allow write: if isOwner();
+    }
+
+    // households/main holds limits + Hotel Y/N; the subcollections hold the lists.
+    match /households/{household} {
+      allow read, write: if allowed();
+
+      match /{list}/{item} {
+        allow read: if allowed();
+        allow delete: if allowed() && list in ['purchases', 'bills', 'subs', 'moves'];
+        allow create, update: if allowed()
+          && list in ['purchases', 'bills', 'subs', 'moves']
+          && request.resource.data.keys().size() < 20;
+      }
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

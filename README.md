@@ -1,8 +1,15 @@
-# Spending Tracker web app
+# Spending
 
-Static PWA (no build step, no backend, no bank connection). Files: index.html, styles.css, app.js, seed.js (starter data from build_tracker.py), manifest.webmanifest, sw.js, icons/.
+This is a pay-period spending tracker. It's a static PWA with no build step, so it runs on any static host, e.g. GitHub Pages.
 
-- Data is saved in the browser on each device (localStorage + IndexedDB mirror). Nothing leaves the device.
-- Move data between iPhone and Mac: Daily tab > Backup & sync > Export backup, then Import backup on the other device.
-- Host: upload this folder (without previews/) to any static HTTPS host, e.g. drag it onto https://app.netlify.com/drop, or a GitHub Pages repo.
-- Test date override: add ?today=2026-10-31 to the URL.
+- **Local mode** (the default): data saves on this device in localStorage and IndexedDB. You move it between devices with Export/Import backup.
+- **Shared mode**: fill in `firebase-config.js` (see `SETUP.md`). Everyone on the allowlist signs in and sees the same data live, and it still works offline.
+
+| File | What it does |
+| --- | --- |
+| `index.html`, `styles.css`, `app.js` | The app |
+| `seed.js` | Empty starting shape. It holds no personal data. |
+| `firebase-config.js` | Firebase web config. It's public by design; placeholders mean local mode. |
+| `sync.js` | Firebase Auth and Firestore sync, loaded from Google's CDN only when configured |
+| `firestore.rules` | Who can read and write: verified, allowlisted emails, with the owner managing the list |
+| `sw.js` | Offline cache. Bump `CACHE` when you ship changes. |
