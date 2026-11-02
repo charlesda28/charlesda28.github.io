@@ -272,3 +272,62 @@ button{cursor:pointer;border:0;background:none;padding:0}
 .wsteps div+div{border-top:.5px solid var(--line)}
 .wsteps b{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent-t);color:var(--accent);display:grid;place-items:center;font-size:13px}
 .wsteps em{font-style:normal;font-weight:600}
+
+/* ---------- sync status pill ---------- */
+.saved.busy i{background:#F5A623;animation:pulse 1s ease-in-out infinite}
+.saved.off i{background:var(--faint)}
+@keyframes pulse{50%{opacity:.35}}
+
+/* ---------- sign-in gate (shared mode) ---------- */
+.gate{position:fixed;inset:0;z-index:80;background:var(--bg);display:none;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.gate.on{display:block;animation:fadein .2s ease}
+body.gated{overflow:hidden}
+body.gated .tabbar{visibility:hidden}
+@keyframes fadein{from{opacity:0}}
+.gwrap{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:calc(var(--safe-t) + 9vh) 20px calc(var(--safe-b) + 30px)}
+.gcard{width:100%;max-width:400px;text-align:center}
+.glogo{width:84px;height:84px;border-radius:22px;box-shadow:0 10px 30px rgba(91,76,240,.3);display:block;margin:0 auto}
+.gcard h1{font-size:30px;font-weight:800;letter-spacing:-.025em;margin:20px 0 8px}
+.gsub{color:var(--sub);font-size:16px;line-height:1.45;margin:0 0 24px}
+.gsub b{color:var(--ink);font-weight:600;word-break:break-all}
+.gicon{font-size:30px;margin-top:-18px;margin-left:58px;position:relative;height:30px}
+.glist{background:var(--card);border-radius:16px;box-shadow:var(--shadow);text-align:left;overflow:hidden}
+.gf{display:flex;align-items:center;gap:10px;padding:0 16px;min-height:54px;cursor:text}
+.gf+.gf{border-top:.5px solid var(--line)}
+.gf span{width:82px;flex:none;font-size:16px;color:var(--ink);font-weight:500}
+.gf input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:17px;padding:15px 0;color:var(--ink)}
+.gf input::placeholder{color:var(--faint)}
+.gerr{min-height:20px;margin:10px 4px;font-size:14px;line-height:1.4;color:var(--bad);text-align:left}
+.gerr.ok{color:var(--good)}
+.gerr:empty{margin:6px 0;min-height:8px}
+.gbtn{margin-top:6px}
+.galt{margin-top:18px;font-size:15px;color:var(--sub)}
+.galt.sm{margin-top:10px;font-size:14px}
+.galt a{color:var(--accent);font-weight:600;text-decoration:none}
+.gopts{display:grid;gap:10px;text-align:left}
+.gopt{display:flex;gap:14px;align-items:center;width:100%;padding:16px;border-radius:18px;background:var(--card);box-shadow:var(--shadow);color:var(--ink);text-align:left;font:inherit}
+.gopt b{display:block;font-size:16px;font-weight:650;line-height:1.3}
+.gopt small{display:block;font-size:13.5px;color:var(--sub);margin-top:3px;line-height:1.35}
+.gopt .gi{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fill2);display:grid;place-items:center;font-size:19px}
+.gopt.primary{background:var(--accent);color:#fff}
+.gopt.primary small{color:rgba(255,255,255,.82)}
+.gopt.primary .gi{background:rgba(255,255,255,.18);color:#fff}
+.gopt:active{transform:scale(.99)}
+.spin{width:34px;height:34px;margin:34px auto 16px;border-radius:50%;border:3px solid var(--fill2);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- shared tracker card (Daily tab) ---------- */
+.sharecard .who{display:flex;align-items:center;gap:12px}
+.sharecard .av{width:40px;height:40px;border-radius:50%;background:var(--accent-t);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:17px;flex:none}
+.sharecard .who .t{font-size:15px;font-weight:600;word-break:break-all}
+.sharecard .who .s{font-size:13px;color:var(--sub)}
+.sharecard .who>div:nth-child(2){flex:1;min-width:0}
+.btn.sm{width:auto;height:36px;padding:0 14px;font-size:14px;border-radius:12px;flex:none}
+.sharecard .sub2{margin:16px 0 6px;font-size:13px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:.04em}
+.plist .p{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:.5px solid var(--line);font-size:15px}
+.plist .p span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist .p em{font-style:normal;font-size:12px;color:var(--accent);background:var(--accent-t);padding:3px 9px;border-radius:99px;font-weight:600}
+.plist .x{color:var(--bad);font-size:14px;font-weight:600;background:none}
+.addp{display:flex;gap:8px;margin-top:10px}
+.addp input{flex:1;min-width:0;height:46px;border-radius:12px;border:0;outline:0;background:var(--fill2);padding:0 14px;font-size:16px;color:var(--ink)}
+.addp .btn{width:auto;height:46px;padding:0 18px;font-size:15px;border-radius:12px}
